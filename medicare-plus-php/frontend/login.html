@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-primary:#0B5D6B;
+    --color-primary-dark:#063A43;
+    --color-primary-light:#E4F1F0;
+    --color-accent:#E1552F;
+    --color-bg:#F5F7F6;
+    --color-surface:#FFFFFF;
+    --color-text:#14201F;
+    --color-text-muted:#5B6C6A;
+    --color-border:#DCE4E2;
+    --color-success:#2F8F5B;
+    --color-danger:#C6392E;
+    --radius:10px;
+    --shadow:0 20px 50px -20px rgba(11,93,107,0.25);
+    --transition:0.25s ease;
+  }
+  [data-theme="dark"]{
+    --color-primary:#4FB8AE;
+    --color-primary-dark:#2E8078;
+    --color-primary-light:#12302D;
+    --color-accent:#F07A54;
+    --color-bg:#0D1416;
+    --color-surface:#152220;
+    --color-text:#E7EDEB;
+    --color-text-muted:#93A6A3;
+    --color-border:#233634;
+    --shadow:0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    background:var(--color-bg);
+    color:var(--color-text);
+    min-height:100vh;
+    display:flex;
+    transition:background var(--transition), color var(--transition);
+  }
+  .brand-panel{
+    flex:1.1;
+    background:linear-gradient(165deg, var(--color-primary-dark), var(--color-primary));
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:56px 48px;
+    position:relative;
+    overflow:hidden;
+  }
+  .brand-mark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.02em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    z-index:2;
+  }
+  .brand-mark .plus{ color:var(--color-accent); font-size:26px; }
+  .brand-copy{ z-index:2; max-width:420px; }
+  .brand-copy h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:32px;
+    line-height:1.25;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+  }
+  .brand-copy p{
+    font-size:15px;
+    line-height:1.6;
+    color:rgba(255,255,255,0.78);
+  }
+  .ecg-wrap{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:180px;
+    z-index:1;
+    opacity:0.9;
+  }
+  .ecg-line{
+    stroke:rgba(255,255,255,0.55);
+    stroke-width:2;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:2000;
+    stroke-dashoffset:2000;
+    animation:draw 4.5s ease-in-out infinite;
+  }
+  @keyframes draw{
+    0%{ stroke-dashoffset:2000; }
+    55%{ stroke-dashoffset:0; }
+    100%{ stroke-dashoffset:0; opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ecg-line{ animation:none; stroke-dashoffset:0; }
+  }
+  .stat-row{
+    z-index:2;
+    display:flex;
+    gap:32px;
+    padding-top:18px;
+    border-top:1px solid rgba(255,255,255,0.18);
+  }
+  .stat-row div{ display:flex; flex-direction:column; gap:2px; }
+  .stat-row .num{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:20px; }
+  .stat-row .label{ font-size:12px; color:rgba(255,255,255,0.65); }
+
+  .form-panel{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+  }
+  .form-card{
+    width:100%;
+    max-width:400px;
+  }
+  .form-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:32px;
+  }
+  .form-top h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:24px;
+  }
+  .form-top p{
+    font-size:13px;
+    color:var(--color-text-muted);
+    margin-top:4px;
+  }
+  .theme-toggle{
+    width:44px; height:24px;
+    border-radius:20px;
+    background:var(--color-border);
+    position:relative;
+    cursor:pointer;
+    border:none;
+    flex-shrink:0;
+    transition:background var(--transition);
+  }
+  .theme-toggle::after{
+    content:'';
+    position:absolute;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--color-surface);
+    top:3px; left:3px;
+    transition:transform var(--transition), background var(--transition);
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  [data-theme="dark"] .theme-toggle::after{ transform:translateX(20px); }
+  [data-theme="dark"] .theme-toggle{ background:var(--color-primary); }
+
+  .role-tabs{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    margin-bottom:24px;
+  }
+  .role-tab{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:11px;
+    font-weight:500;
+    text-align:center;
+    padding:9px 2px;
+    border-radius:8px;
+    border:1px solid var(--color-border);
+    background:var(--color-surface);
+    color:var(--color-text-muted);
+    cursor:pointer;
+    transition:all var(--transition);
+  }
+  .role-tab.active{
+    background:var(--color-primary);
+    border-color:var(--color-primary);
+    color:#fff;
+  }
+
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:6px;
+    color:var(--color-text);
+  }
+  .input-wrap{ position:relative; }
+  .input-wrap input{
+    width:100%;
+    padding:12px 14px;
+    padding-right:40px;
+    border-radius:var(--radius);
+    border:1px solid var(--color-border);
+    background:var(--color-surface);
+    color:var(--color-text);
+    font-size:14px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color var(--transition);
+  }
+  .input-wrap input:focus{
+    border-color:var(--color-primary);
+    box-shadow:0 0 0 3px var(--color-primary-light);
+  }
+  .input-wrap input.invalid{ border-color:var(--color-danger); }
+  .toggle-pass{
+    position:absolute;
+    right:12px; top:50%;
+    transform:translateY(-50%);
+    background:none; border:none;
+    font-size:12px;
+    color:var(--color-text-muted);
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .error-text{
+    font-size:12px;
+    color:var(--color-danger);
+    margin-top:5px;
+    min-height:15px;
+  }
+
+  .row-between{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:22px;
+    font-size:13px;
+  }
+  .remember{ display:flex; align-items:center; gap:7px; color:var(--color-text-muted); }
+  .remember input{ accent-color:var(--color-primary); }
+  .forgot{ color:var(--color-primary); text-decoration:none; font-weight:500; }
+  .forgot:hover{ text-decoration:underline; }
+
+  .submit-btn{
+    width:100%;
+    padding:13px;
+    border-radius:var(--radius);
+    border:none;
+    background:var(--color-primary);
+    color:#fff;
+    font-family:inherit;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:background var(--transition), transform 0.1s ease;
+  }
+  .submit-btn:hover{ background:var(--color-primary-dark); }
+  .submit-btn:active{ transform:scale(0.99); }
+  .submit-btn:focus-visible, .role-tab:focus-visible, .theme-toggle:focus-visible{
+    outline:2px solid var(--color-accent);
+    outline-offset:2px;
+  }
+
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:22px 0;
+    color:var(--color-text-muted);
+    font-size:12px;
+  }
+  .divider::before, .divider::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--color-border);
+  }
+
+  .demo-note{
+    background:var(--color-primary-light);
+    border:1px solid var(--color-border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    font-size:12px;
+    color:var(--color-text-muted);
+    line-height:1.6;
+  }
+  .demo-note code{
+    background:var(--color-surface);
+    padding:1px 5px;
+    border-radius:4px;
+    font-size:11.5px;
+  }
+
+  .banner{
+    display:none;
+    align-items:center;
+    gap:8px;
+    padding:11px 14px;
+    border-radius:var(--radius);
+    font-size:13px;
+    margin-bottom:18px;
+  }
+  .banner.show{ display:flex; }
+  .banner.success{ background:rgba(47,143,91,0.12); color:var(--color-success); }
+  .banner.error{ background:rgba(198,57,46,0.12); color:var(--color-danger); }
+
+  @media (max-width:860px){
+    .brand-panel{ display:none; }
+    .form-panel{ padding:24px; }
+  }
+</style>
+</head>
+<script src="config.js"></script>
+<body>
+
+<div class="brand-panel">
+  <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:16px;">+</span></div>
+
+  <div class="brand-copy">
+    <h1>One record. Every department.</h1>
+    <p>Patients, doctors, appointments, admissions, prescriptions and billing — all in a single connected system instead of scattered paper trails.</p>
+  </div>
+
+  <div>
+    <div class="stat-row">
+      <div><span class="num">18</span><span class="label">linked tables</span></div>
+      <div><span class="num">5</span><span class="label">staff roles</span></div>
+      <div><span class="num">24/7</span><span class="label">record access</span></div>
+    </div>
+  </div>
+
+  <div class="ecg-wrap">
+    <svg viewBox="0 0 600 180" preserveAspectRatio="none" width="100%" height="100%">
+      <path class="ecg-line" d="M0,110 L90,110 L110,110 L125,60 L140,150 L155,30 L170,110 L190,110 L260,110 L280,80 L295,140 L310,110 L600,110" />
+    </svg>
+  </div>
+</div>
+
+<div class="form-panel">
+  <div class="form-card">
+    <div class="form-top">
+      <div>
+        <h2>Sign in</h2>
+        <p>Access your MediCare+ dashboard</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="role-tabs" id="roleTabs">
+      <div class="role-tab active" data-role="Admin">Admin</div>
+      <div class="role-tab" data-role="Doctor">Doctor</div>
+      <div class="role-tab" data-role="Receptionist">Reception</div>
+      <div class="role-tab" data-role="Pharmacist">Pharmacy</div>
+      <div class="role-tab" data-role="Cashier">Cashier</div>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="username">Username or staff ID</label>
+        <div class="input-wrap">
+          <input type="text" id="username" autocomplete="username" placeholder="e.g. dr.rahman or admin01">
+        </div>
+        <div class="error-text" id="usernameError"></div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" autocomplete="current-password" placeholder="Enter your password">
+          <button type="button" class="toggle-pass" id="togglePass">Show</button>
+        </div>
+        <div class="error-text" id="passwordError"></div>
+      </div>
+
+      <div class="row-between">
+        <label class="remember"><input type="checkbox" id="remember"> Remember me</label>
+        <a href="#" class="forgot" onclick="return showForgot()">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Sign in as <span id="roleLabel">Admin</span></button>
+    </form>
+
+<script>
+  // ---- Dark mode ----
+  function toggleTheme(){
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  }
+
+  // ---- Role-based login tabs ----
+  const roleTabs = document.querySelectorAll('.role-tab');
+  const roleLabel = document.getElementById('roleLabel');
+  const demoUserLabel = document.getElementById('demoUser');
+  let selectedRole = 'Admin';
+  roleTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      roleTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      selectedRole = tab.dataset.role;
+      roleLabel.textContent = selectedRole;
+      demoUserLabel.textContent = 'demo.' + selectedRole.toLowerCase();
+    });
+  });
+
+  // ---- Show/hide password ----
+  const togglePass = document.getElementById('togglePass');
+  const passwordInput = document.getElementById('password');
+  togglePass.addEventListener('click', () => {
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    togglePass.textContent = isPassword ? 'Hide' : 'Show';
+  });
+
+  let sessionToken = null;
+
+  // ---- Validation + real submit ----
+  const form = document.getElementById('loginForm');
+  const usernameInput = document.getElementById('username');
+  const usernameError = document.getElementById('usernameError');
+  const passwordError = document.getElementById('passwordError');
+  const banner = document.getElementById('banner');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function setBanner(type, text){
+    banner.className = 'banner show ' + type;
+    banner.textContent = text;
+  }
+
+  // If a dashboard page bounced us back here (e.g. an API call it made
+  // was rejected), show exactly why instead of silently dropping the user
+  // back at a blank login form. See shared.js's apiFetch()/requireSession().
+  (function showBounceReason(){
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get('reason');
+    if (!reason) return;
+    if (reason === 'no-session') {
+      setBanner('error', 'You were signed out (no active session found). Please sign in again.');
+    } else {
+      setBanner('error', 'Signed out: a dashboard request failed — ' + reason + '. This usually means config.js\'s API_BASE_URL does not match where your backend is actually running, or your session expired.');
+    }
+    // Clean the URL so refreshing the page doesn't keep re-showing this.
+    window.history.replaceState({}, document.title, window.location.pathname);
+  })();
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    usernameError.textContent = '';
+    passwordError.textContent = '';
+    usernameInput.classList.remove('invalid');
+    passwordInput.classList.remove('invalid');
+    banner.className = 'banner';
+
+    let valid = true;
+    if (usernameInput.value.trim().length < 3){
+      usernameError.textContent = 'Enter a valid username or staff ID.';
+      usernameInput.classList.add('invalid');
+      valid = false;
+    }
+    if (passwordInput.value.length < 6){
+      passwordError.textContent = 'Password must be at least 6 characters.';
+      passwordInput.classList.add('invalid');
+      valid = false;
+    }
+    if (!valid) return;
+
+    const originalBtnText = submitBtn.textContent;
+    submitBtn.textContent = 'Signing in...';
+    submitBtn.disabled = true;
+
+    try {
+      const response = await fetch(API_BASE_URL + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: usernameInput.value.trim(),
+          password: passwordInput.value,
+          role: selectedRole,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBanner('error', data.message || 'Sign in failed. Check your credentials and try again.');
+        return;
+      }
+
+      sessionToken = data.token;
+      // Session is kept in sessionStorage (cleared when the tab closes) so the
+      // dashboard pages — separate URLs — can read it after navigation. See the
+      // comment in dashboard/shared.js for the tradeoffs vs. an httpOnly cookie.
+      sessionStorage.setItem('medicareplus_session', JSON.stringify({ token: data.token, user: data.user }));
+      setBanner('success', 'Signed in as ' + data.user.name + ' (' + data.user.role + '). Redirecting to dashboard...');
+      setTimeout(() => {
+        window.location.href = 'dashboard/' + data.user.role.toLowerCase() + '.html';
+      }, 600);
+    } catch (err) {
+      setBanner('error', 'Could not reach the server. Is the backend running on ' + API_BASE_URL + '?');
+    } finally {
+      submitBtn.textContent = originalBtnText;
+      submitBtn.disabled = false;
+    }
+  });
+
+  function showForgot(){
+    setBanner('error', 'Password reset isn\'t wired up yet — ask an Admin to reset it from the Staff table.');
+    return false;
+  }
+</script>
+
+</body>
+</html>

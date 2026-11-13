@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Receptionist Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:14px;">+</span></div>
+    <div class="sidebar-role">Reception Dashboard</div>
+    <nav class="nav-list">
+      <a class="nav-item active" href="#overview">Overview</a>
+      <a class="nav-item" href="#tier2">Tier-2 Operations</a>
+      <a class="nav-item" href="#patients">Patients</a>
+      <a class="nav-item" href="#appointments">Appointments</a>
+      <a class="nav-item" href="#admissions">Admissions</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong data-user-name>—</strong><span data-user-role>—</span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1>Front desk</h1>
+          <p>Register patients and manage today's appointments.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <section id="overview">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statPatients">—</div><div class="label">Total patients</div></div>
+        <div class="stat-card"><div class="num" id="statAppts">—</div><div class="label">Total appointments</div></div>
+        <div class="stat-card"><div class="num" id="statScheduled">—</div><div class="label">Scheduled (upcoming)</div></div>
+      </div>
+    </section>
+
+    <section id="patients" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Patients</h3>
+          <div class="sub">Register new patients and keep their details up to date.</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <input type="search" class="search-bar" id="patientSearch" placeholder="Search by name or phone...">
+          <button class="btn btn-primary" id="togglePatientForm">+ Register patient</button>
+        </div>
+      </div>
+
+      <div class="collapsible" id="patientFormWrap">
+        <form id="patientForm">
+          <input type="hidden" id="patientId">
+          <div class="form-grid">
+            <div class="field"><label>Full name</label><input type="text" id="pName" required></div>
+            <div class="field"><label>Date of birth</label><input type="date" id="pDob" required></div>
+            <div class="field"><label>Gender</label>
+              <select id="pGender" required>
+                <option value="">Select...</option>
+                <option>Male</option><option>Female</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Phone</label><input type="text" id="pPhone"></div>
+            <div class="field"><label>Email</label><input type="email" id="pEmail"></div>
+            <div class="field"><label>Blood group</label><input type="text" id="pBlood" placeholder="e.g. O+"></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="patientFormSubmit">Save patient</button>
+            <button type="button" class="btn" onclick="resetPatientForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>DOB</th><th>Gender</th><th>Phone</th><th>Blood</th><th></th></tr></thead>
+          <tbody id="patientsTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="appointments" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Appointments</h3>
+          <div class="sub">Book new appointments and update visit status.</div>
+        </div>
+        <button class="btn btn-primary" id="toggleApptForm">+ Book appointment</button>
+      </div>
+
+      <div class="collapsible" id="apptFormWrap">
+        <form id="apptForm">
+          <div class="form-grid">
+            <div class="field"><label>Patient</label><select id="aPatient" required><option value="">Loading...</option></select></div>
+            <div class="field"><label>Doctor</label><select id="aDoctor" required><option value="">Loading...</option></select></div>
+            <div class="field"><label>Date</label><input type="date" id="aDate" required></div>
+            <div class="field"><label>Time</label><input type="time" id="aTime" required></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Book appointment</button>
+            <button type="button" class="btn" onclick="closeApptForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th><th>Update</th></tr></thead>
+          <tbody id="apptsTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="admissions" class="panel">
+      <div class="panel-head"><div><h3>Admissions & rooms</h3><div class="sub">Assign an available room and discharge patients when their stay ends.</div></div><button class="btn btn-primary" id="toggleAdmissionForm">+ Admit patient</button></div>
+      <div class="collapsible" id="admissionFormWrap"><form id="admissionForm"><div class="form-grid">
+        <div class="field"><label>Patient</label><select id="adPatient" required><option value="">Loading...</option></select></div>
+        <div class="field"><label>Doctor</label><select id="adDoctor" required><option value="">Loading...</option></select></div>
+        <div class="field"><label>Available room</label><select id="adRoom" required><option value="">Loading...</option></select></div>
+      </div><div class="form-actions"><button class="btn btn-primary">Admit patient</button><button type="button" class="btn" onclick="closeAdmissionForm()">Cancel</button></div></form></div>
+      <div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Room</th><th>Admitted</th><th>Status</th><th></th></tr></thead><tbody id="admissionsTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<script src="../config.js">
+
+// ---------- admissions ----------
+const admissionFormWrap=document.getElementById('admissionFormWrap');
+document.getElementById('toggleAdmissionForm').addEventListener('click',()=>admissionFormWrap.classList.toggle('open'));
+function closeAdmissionForm(){admissionFormWrap.classList.remove('open');}
+async function loadAdmissionData(){
+ try{
+  const [rooms,doctors,admissions]=await Promise.all([apiFetch('/rooms'),apiFetch('/doctors'),apiFetch('/admissions')]);
+  const available=rooms.filter(r=>r.status==='Available');
+  document.getElementById('adRoom').innerHTML='<option value="">Select room...</option>'+available.map(r=>`<option value="${r.room_id}">${escapeHtml(r.room_number)} — ${escapeHtml(r.room_type)} (Floor ${escapeHtml(r.floor||'—')})</option>`).join('');
+  document.getElementById('adDoctor').innerHTML='<option value="">Select doctor...</option>'+doctors.map(d=>`<option value="${d.doctor_id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization||'')}</option>`).join('');
+  document.getElementById('adPatient').innerHTML='<option value="">Select patient...</option>'+allPatients.map(p=>`<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+  const tb=document.getElementById('admissionsTbody');
+  tb.innerHTML=admissions.length?admissions.map(a=>`<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.doctor_name)}</td><td>${escapeHtml(a.room_number)} (${escapeHtml(a.room_type)})</td><td>${escapeHtml(a.admission_date)}</td><td>${a.discharge_date?'<span class="badge badge-success">Discharged</span>':'<span class="badge badge-warning">Admitted</span>'}</td><td>${a.discharge_date?'—':`<button class="btn btn-sm" onclick="discharge(${a.admission_id})">Discharge</button>`}</td></tr>`).join(''):'<tr class="empty-row"><td colspan="6">No admissions.</td></tr>';
+ }catch(err){showBanner(banner,'error',err.message);}
+}
+document.getElementById('admissionForm').addEventListener('submit',async e=>{e.preventDefault();try{await apiFetch('/admissions',{method:'POST',body:JSON.stringify({patient_id:document.getElementById('adPatient').value,doctor_id:document.getElementById('adDoctor').value,room_id:document.getElementById('adRoom').value})});showBanner(banner,'success','Patient admitted.');e.target.reset();closeAdmissionForm();loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}});
+async function discharge(id){if(!confirm('Discharge this patient?'))return;try{await apiFetch('/admissions/'+id+'/discharge',{method:'PATCH'});showBanner(banner,'success','Patient discharged.');loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}}
+</script>
+<script src="shared.js">
+
+// ---------- admissions ----------
+const admissionFormWrap=document.getElementById('admissionFormWrap');
+document.getElementById('toggleAdmissionForm').addEventListener('click',()=>admissionFormWrap.classList.toggle('open'));
+function closeAdmissionForm(){admissionFormWrap.classList.remove('open');}
+async function loadAdmissionData(){
+ try{
+  const [rooms,doctors,admissions]=await Promise.all([apiFetch('/rooms'),apiFetch('/doctors'),apiFetch('/admissions')]);
+  const available=rooms.filter(r=>r.status==='Available');
+  document.getElementById('adRoom').innerHTML='<option value="">Select room...</option>'+available.map(r=>`<option value="${r.room_id}">${escapeHtml(r.room_number)} — ${escapeHtml(r.room_type)} (Floor ${escapeHtml(r.floor||'—')})</option>`).join('');
+  document.getElementById('adDoctor').innerHTML='<option value="">Select doctor...</option>'+doctors.map(d=>`<option value="${d.doctor_id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization||'')}</option>`).join('');
+  document.getElementById('adPatient').innerHTML='<option value="">Select patient...</option>'+allPatients.map(p=>`<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+  const tb=document.getElementById('admissionsTbody');
+  tb.innerHTML=admissions.length?admissions.map(a=>`<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.doctor_name)}</td><td>${escapeHtml(a.room_number)} (${escapeHtml(a.room_type)})</td><td>${escapeHtml(a.admission_date)}</td><td>${a.discharge_date?'<span class="badge badge-success">Discharged</span>':'<span class="badge badge-warning">Admitted</span>'}</td><td>${a.discharge_date?'—':`<button class="btn btn-sm" onclick="discharge(${a.admission_id})">Discharge</button>`}</td></tr>`).join(''):'<tr class="empty-row"><td colspan="6">No admissions.</td></tr>';
+ }catch(err){showBanner(banner,'error',err.message);}
+}
+document.getElementById('admissionForm').addEventListener('submit',async e=>{e.preventDefault();try{await apiFetch('/admissions',{method:'POST',body:JSON.stringify({patient_id:document.getElementById('adPatient').value,doctor_id:document.getElementById('adDoctor').value,room_id:document.getElementById('adRoom').value})});showBanner(banner,'success','Patient admitted.');e.target.reset();closeAdmissionForm();loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}});
+async function discharge(id){if(!confirm('Discharge this patient?'))return;try{await apiFetch('/admissions/'+id+'/discharge',{method:'PATCH'});showBanner(banner,'success','Patient discharged.');loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}}
+</script>
+<script>
+const session = requireSession('Receptionist');
+const banner = document.getElementById('banner');
+let allPatients = [];
+
+if (session) {
+  renderUserChrome(session);
+  loadPatients();
+  loadAppointments();
+  loadAdmissionData();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+
+async function refreshOverview() {
+  try {
+    const [patients, appts] = await Promise.all([
+      allPatients.length ? Promise.resolve(allPatients) : apiFetch('/patients'),
+      apiFetch('/appointments'),
+    ]);
+    document.getElementById('statPatients').textContent = patients.length;
+    document.getElementById('statAppts').textContent = appts.length;
+    document.getElementById('statScheduled').textContent = appts.filter(a => a.status === 'Scheduled').length;
+  } catch (err) { /* non-fatal for overview */ }
+}
+
+// ---------- patients ----------
+const patientFormWrap = document.getElementById('patientFormWrap');
+document.getElementById('togglePatientForm').addEventListener('click', () => {
+  patientFormWrap.classList.toggle('open');
+});
+
+function resetPatientForm() {
+  document.getElementById('patientForm').reset();
+  document.getElementById('patientId').value = '';
+  document.getElementById('patientFormSubmit').textContent = 'Save patient';
+  patientFormWrap.classList.remove('open');
+}
+
+document.getElementById('patientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('patientId').value;
+  const payload = {
+    name: document.getElementById('pName').value.trim(),
+    dob: document.getElementById('pDob').value,
+    gender: document.getElementById('pGender').value,
+    phone: document.getElementById('pPhone').value.trim(),
+    email: document.getElementById('pEmail').value.trim(),
+    blood_group: document.getElementById('pBlood').value.trim(),
+  };
+  try {
+    if (id) {
+      await apiFetch('/patients/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+      showBanner(banner, 'success', 'Patient updated.');
+    } else {
+      await apiFetch('/patients', { method: 'POST', body: JSON.stringify(payload) });
+      showBanner(banner, 'success', 'Patient registered.');
+    }
+    resetPatientForm();
+    loadPatients();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+async function loadPatients() {
+  const tbody = document.getElementById('patientsTbody');
+  try {
+    allPatients = await apiFetch('/patients');
+    renderPatients(allPatients);
+    refreshOverview();
+    if (typeof loadAdmissionData === "function") loadAdmissionData();
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load patients.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderPatients(list) {
+  const tbody = document.getElementById('patientsTbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No patients yet.</td></tr>';
+    return;
+  }
+  // No delete button here — patient deletion is Admin-only on the backend.
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.dob)}</td>
+      <td>${escapeHtml(p.gender)}</td>
+      <td>${escapeHtml(p.phone || '—')}</td>
+      <td>${escapeHtml(p.blood_group || '—')}</td>
+      <td><button class="btn btn-sm" onclick="editPatient(${p.patient_id})">Edit</button></td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('patientSearch').addEventListener('input', (e) => {
+  const term = e.target.value.trim().toLowerCase();
+  if (!term) { renderPatients(allPatients); return; }
+  renderPatients(allPatients.filter(p =>
+    p.name.toLowerCase().includes(term) || (p.phone || '').includes(term)
+  ));
+});
+
+function editPatient(id) {
+  const p = allPatients.find(x => x.patient_id === id);
+  if (!p) return;
+  document.getElementById('patientId').value = p.patient_id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pDob').value = p.dob;
+  document.getElementById('pGender').value = p.gender;
+  document.getElementById('pPhone').value = p.phone || '';
+  document.getElementById('pEmail').value = p.email || '';
+  document.getElementById('pBlood').value = p.blood_group || '';
+  document.getElementById('patientFormSubmit').textContent = 'Update patient';
+  patientFormWrap.classList.add('open');
+  document.getElementById('patients').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ---------- appointments ----------
+const apptFormWrap = document.getElementById('apptFormWrap');
+document.getElementById('toggleApptForm').addEventListener('click', () => {
+  apptFormWrap.classList.toggle('open');
+  loadPatientsIntoSelect();
+  loadDoctorsIntoSelect();
+});
+function closeApptForm() { apptFormWrap.classList.remove('open'); }
+
+function loadPatientsIntoSelect() {
+  const sel = document.getElementById('aPatient');
+  sel.innerHTML = '<option value="">Select patient...</option>' +
+    allPatients.map(p => `<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+}
+
+async function loadDoctorsIntoSelect() {
+  const sel = document.getElementById('aDoctor');
+  try {
+    const doctors = await apiFetch('/doctors');
+    sel.innerHTML = '<option value="">Select doctor...</option>' +
+      doctors.map(d => `<option value="${d.doctor_id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization || '')}</option>`).join('');
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load doctors</option>';
+  }
+}
+
+document.getElementById('apptForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    patient_id: document.getElementById('aPatient').value,
+    doctor_id: document.getElementById('aDoctor').value,
+    appt_date: document.getElementById('aDate').value,
+    appt_time: document.getElementById('aTime').value,
+  };
+  try {
+    await apiFetch('/appointments', { method: 'POST', body: JSON.stringify(payload) });
+    showBanner(banner, 'success', 'Appointment booked.');
+    document.getElementById('apptForm').reset();
+    closeApptForm();
+    loadAppointments();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+async function loadAppointments() {
+  const tbody = document.getElementById('apptsTbody');
+  try {
+    const appts = await apiFetch('/appointments');
+    if (!appts.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No appointments yet.</td></tr>';
+      return;
+    }
+    const statuses = ['Scheduled', 'Completed', 'Cancelled', 'No-Show'];
+    tbody.innerHTML = appts.map(a => `
+      <tr>
+        <td>${escapeHtml(a.appt_date)}</td>
+        <td>${escapeHtml(a.appt_time)}</td>
+        <td>${escapeHtml(a.patient_name)}</td>
+        <td>${escapeHtml(a.doctor_name)}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td>
+          <select id="statusSel${a.appointment_id}" class="btn-sm" style="display:inline-block;width:auto;padding:5px 6px;">
+            ${statuses.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm" onclick="updateApptStatus(${a.appointment_id})">Apply</button>
+        </td>
+      </tr>
+    `).join('');
+    refreshOverview();
+    if (typeof loadAdmissionData === "function") loadAdmissionData();
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load appointments.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+async function updateApptStatus(id) {
+  const status = document.getElementById('statusSel' + id).value;
+  try {
+    await apiFetch('/appointments/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) });
+    showBanner(banner, 'success', 'Appointment status updated.');
+    loadAppointments();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+
+// ---------- admissions ----------
+const admissionFormWrap=document.getElementById('admissionFormWrap');
+document.getElementById('toggleAdmissionForm').addEventListener('click',()=>admissionFormWrap.classList.toggle('open'));
+function closeAdmissionForm(){admissionFormWrap.classList.remove('open');}
+async function loadAdmissionData(){
+ try{
+  const [rooms,doctors,admissions]=await Promise.all([apiFetch('/rooms'),apiFetch('/doctors'),apiFetch('/admissions')]);
+  const available=rooms.filter(r=>r.status==='Available');
+  document.getElementById('adRoom').innerHTML='<option value="">Select room...</option>'+available.map(r=>`<option value="${r.room_id}">${escapeHtml(r.room_number)} — ${escapeHtml(r.room_type)} (Floor ${escapeHtml(r.floor||'—')})</option>`).join('');
+  document.getElementById('adDoctor').innerHTML='<option value="">Select doctor...</option>'+doctors.map(d=>`<option value="${d.doctor_id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization||'')}</option>`).join('');
+  document.getElementById('adPatient').innerHTML='<option value="">Select patient...</option>'+allPatients.map(p=>`<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+  const tb=document.getElementById('admissionsTbody');
+  tb.innerHTML=admissions.length?admissions.map(a=>`<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.doctor_name)}</td><td>${escapeHtml(a.room_number)} (${escapeHtml(a.room_type)})</td><td>${escapeHtml(a.admission_date)}</td><td>${a.discharge_date?'<span class="badge badge-success">Discharged</span>':'<span class="badge badge-warning">Admitted</span>'}</td><td>${a.discharge_date?'—':`<button class="btn btn-sm" onclick="discharge(${a.admission_id})">Discharge</button>`}</td></tr>`).join(''):'<tr class="empty-row"><td colspan="6">No admissions.</td></tr>';
+ }catch(err){showBanner(banner,'error',err.message);}
+}
+document.getElementById('admissionForm').addEventListener('submit',async e=>{e.preventDefault();try{await apiFetch('/admissions',{method:'POST',body:JSON.stringify({patient_id:document.getElementById('adPatient').value,doctor_id:document.getElementById('adDoctor').value,room_id:document.getElementById('adRoom').value})});showBanner(banner,'success','Patient admitted.');e.target.reset();closeAdmissionForm();loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}});
+async function discharge(id){if(!confirm('Discharge this patient?'))return;try{await apiFetch('/admissions/'+id+'/discharge',{method:'PATCH'});showBanner(banner,'success','Patient discharged.');loadAdmissionData();}catch(err){showBanner(banner,'error',err.message);}}
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Pharmacist Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:14px;">+</span></div>
+    <div class="sidebar-role">Pharmacy Dashboard</div>
+    <nav class="nav-list">
+      <a class="nav-item active" href="#overview">Overview</a>
+      <a class="nav-item" href="#tier2">Tier-2 Operations</a>
+      <a class="nav-item" href="#inventory">Inventory</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong data-user-name>—</strong><span data-user-role>—</span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1>Pharmacy stock</h1>
+          <p>Keep an eye on stock levels and reorder before you run out.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <section id="overview">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statMeds">—</div><div class="label">Medicines tracked</div></div>
+        <div class="stat-card accent"><div class="num" id="statLow">—</div><div class="label">Below reorder level</div></div>
+        <div class="stat-card accent"><div class="num" id="statExpiry">—</div><div class="label">Expiring / expired</div></div>
+      </div>
+    </section>
+
+    <section id="inventory" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Medicine inventory</h3>
+          <div class="sub">Rows below their reorder level are flagged for restocking.</div>
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--color-text-muted);">
+          <input type="checkbox" id="lowOnly" style="width:auto;"> Show low-stock only
+          <input type="checkbox" id="expiryOnly" style="width:auto; margin-left:10px;"> Expiry alerts
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Medicine</th><th>Category</th><th>In stock</th><th>Reorder level</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody id="inventoryTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../config.js"></script>
+<script src="shared.js"></script>
+<script src="tier2.js"></script>
+<script>
+const session = requireSession('Pharmacist');
+const banner = document.getElementById('banner');
+let allItems = [];
+
+if (session) {
+  renderUserChrome(session);
+  loadInventory();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+
+async function loadInventory() {
+  const tbody = document.getElementById('inventoryTbody');
+  try {
+    allItems = await apiFetch('/inventory');
+    document.getElementById('statMeds').textContent = allItems.length;
+    document.getElementById('statLow').textContent = allItems.filter(i => Number(i.quantity_in_stock) <= Number(i.reorder_level)).length;
+    document.getElementById('statExpiry').textContent = allItems.filter(i => i.expiry_date && new Date(i.expiry_date + 'T23:59:59') <= new Date(Date.now()+30*86400000)).length;
+    renderInventory();
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load inventory.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderInventory() {
+  const tbody = document.getElementById('inventoryTbody');
+  const lowOnly = document.getElementById('lowOnly').checked;
+  const expiryOnly = document.getElementById('expiryOnly').checked;
+  let list = allItems;
+  if (lowOnly) list = list.filter(i => Number(i.quantity_in_stock) <= Number(i.reorder_level));
+  if (expiryOnly) list = list.filter(i => i.expiry_date && new Date(i.expiry_date + 'T23:59:59') <= new Date(Date.now()+30*86400000));
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Nothing to show.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(i => {
+    const low = Number(i.quantity_in_stock) <= Number(i.reorder_level);
+    const expired = i.expiry_date && new Date(i.expiry_date + 'T23:59:59') < new Date();
+    const expiring = i.expiry_date && !expired && new Date(i.expiry_date + 'T23:59:59') <= new Date(Date.now()+30*86400000);
+    return `
+      <tr>
+        <td>${escapeHtml(i.medicine_name)}</td>
+        <td>${escapeHtml(i.category || '—')}</td>
+        <td>${escapeHtml(i.quantity_in_stock)}</td>
+        <td>${escapeHtml(i.reorder_level)}</td>
+        <td>${escapeHtml(i.expiry_date || '—')}</td>
+        <td>${expired ? '<span class="badge badge-danger">Expired</span>' : expiring ? '<span class="badge badge-warning">Expiring soon</span>' : low ? '<span class="badge badge-danger">Low stock</span>' : '<span class="badge badge-success">OK</span>'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.getElementById('lowOnly').addEventListener('change', renderInventory);
+document.getElementById('expiryOnly').addEventListener('change', renderInventory);
+</script>
+</body>
+</html>

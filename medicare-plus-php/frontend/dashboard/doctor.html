@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Doctor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:14px;">+</span></div>
+    <div class="sidebar-role">Doctor Dashboard</div>
+    <nav class="nav-list">
+      <a class="nav-item active" href="#overview">Overview</a>
+      <a class="nav-item" href="#tier2">Tier-2 Operations</a>
+      <a class="nav-item" href="#appointments">My Appointments</a>
+      <a class="nav-item" href="#patients">Patients</a>
+      <a class="nav-item" href="#clinical">Clinical Notes</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong data-user-name>—</strong><span data-user-role>—</span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1>Welcome back, Doctor</h1>
+          <p>Your schedule and patient records at a glance.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <section id="overview">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statTotal">—</div><div class="label">Total appointments</div></div>
+        <div class="stat-card"><div class="num" id="statScheduled">—</div><div class="label">Scheduled (upcoming)</div></div>
+        <div class="stat-card"><div class="num" id="statCompleted">—</div><div class="label">Completed</div></div>
+      </div>
+    </section>
+
+    <section id="appointments" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>My appointments</h3>
+          <div class="sub">Update status as you see patients.</div>
+        </div>
+        <input type="date" id="dateFilter" style="max-width:180px;">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Status</th><th>Update</th></tr></thead>
+          <tbody id="apptsTbody"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="clinical" class="panel">
+      <div class="panel-head"><div><h3>Clinical notes & prescriptions</h3><div class="sub">Complete a visit, record the diagnosis, then prescribe medicine.</div></div></div>
+      <form id="treatmentForm">
+        <div class="form-grid">
+          <div class="field"><label>Appointment</label><select id="tAppointment" required><option value="">Select completed visit...</option></select></div>
+          <div class="field"><label>Diagnosis</label><input id="diagnosis" required placeholder="e.g. Acute gastritis"></div>
+          <div class="field"><label>Treatment notes</label><input id="treatmentNotes" placeholder="Advice / follow-up"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Save treatment</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top:18px;"><table><thead><tr><th>Patient</th><th>Diagnosis</th><th>Notes</th><th>Date</th></tr></thead><tbody id="treatmentsTbody"><tr class="empty-row"><td colspan="4">Loading...</td></tr></tbody></table></div>
+      <div class="panel-head" style="margin-top:24px;"><div><h3>Prescription</h3><div class="sub">Stock is reduced automatically when a prescription is saved.</div></div></div>
+      <form id="prescriptionForm">
+        <div class="form-grid">
+          <div class="field" style="grid-column:1/-1;"><label>Treatment</label><select id="pTreatment" required><option value="">Select treatment...</option></select><div id="pTreatmentHelp" class="sub" style="margin-top:6px;">Create and save a treatment first.</div></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div class="panel-head" style="margin-bottom:10px;">
+            <div><h3 style="margin:0;">Medicines</h3><div class="sub">One treatment can contain multiple medicines. Add as many as needed.</div></div>
+            <button class="btn" type="button" id="addMedicineRow">+ Add medicine</button>
+          </div>
+          <div id="prescriptionRows"></div>
+        </div>
+
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Save prescription</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top:18px;">
+        <table><thead><tr><th>Patient</th><th>Medicine</th><th>Dosage</th><th>Duration</th><th>Qty</th></tr></thead>
+        <tbody id="prescriptionsTbody"><tr class="empty-row"><td colspan="5">No prescriptions yet.</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <section id="patients" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Patients</h3>
+          <div class="sub">Read-only lookup. Registration/edits are handled by Reception.</div>
+        </div>
+        <input type="search" class="search-bar" id="patientSearch" placeholder="Search by name or phone...">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>DOB</th><th>Gender</th><th>Phone</th><th>Blood</th></tr></thead>
+          <tbody id="patientsTbody"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../config.js"></script>
+<script src="shared.js"></script>
+<script src="tier2.js"></script>
+<script>
+const session = requireSession('Doctor');
+const banner = document.getElementById('banner');
+let allAppts = [];
+let allPatients = [];
+
+if (session) {
+  renderUserChrome(session);
+  loadAppointments();
+  loadPatients();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+
+async function loadAppointments() {
+  const tbody = document.getElementById('apptsTbody');
+  try {
+    allAppts = await apiFetch('/appointments?doctor_id=' + session.user.doctor_id);
+    renderAppts(allAppts);
+    document.getElementById('statTotal').textContent = allAppts.length;
+    document.getElementById('statScheduled').textContent = allAppts.filter(a => a.status === 'Scheduled').length;
+    document.getElementById('statCompleted').textContent = allAppts.filter(a => a.status === 'Completed').length;
+    loadClinical();
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Could not load appointments.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderAppts(list) {
+  const tbody = document.getElementById('apptsTbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No appointments found.</td></tr>';
+    return;
+  }
+  const statuses = ['Scheduled', 'Completed', 'Cancelled', 'No-Show'];
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td>${escapeHtml(a.appt_date)}</td>
+      <td>${escapeHtml(a.appt_time)}</td>
+      <td>${escapeHtml(a.patient_name)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>
+        <select id="statusSel${a.appointment_id}" class="btn-sm" style="display:inline-block;width:auto;padding:5px 6px;">
+          ${statuses.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm" onclick="updateApptStatus(${a.appointment_id})">Apply</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('dateFilter').addEventListener('change', (e) => {
+  const val = e.target.value;
+  renderAppts(val ? allAppts.filter(a => a.appt_date === val) : allAppts);
+});
+
+async function updateApptStatus(id) {
+  const status = document.getElementById('statusSel' + id).value;
+  try {
+    await apiFetch('/appointments/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) });
+    showBanner(banner, 'success', 'Appointment status updated.');
+    loadAppointments();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+async function loadClinical() {
+  try {
+    const [treatments, medicines] = await Promise.all([
+      apiFetch('/treatments?doctor_id=' + session.user.doctor_id),
+      apiFetch('/medicines')
+    ]);
+    const completed = allAppts.filter(a => a.status === 'Completed');
+    document.getElementById('tAppointment').innerHTML = '<option value="">Select completed visit...</option>' + completed.map(a => `<option value="${a.appointment_id}">#${a.appointment_id} — ${escapeHtml(a.patient_name)} (${escapeHtml(a.appt_date)})</option>`).join('');
+    const treatmentSelect = document.getElementById('pTreatment');
+    treatmentSelect.innerHTML = '<option value="">' + (treatments.length ? 'Select treatment...' : 'No treatments yet — save a treatment first') + '</option>' + treatments.map(t => `<option value="${t.treatment_id}">#${t.treatment_id} — ${escapeHtml(t.patient_name)} — ${escapeHtml(t.diagnosis)}</option>`).join('');
+    treatmentSelect.disabled = !treatments.length;
+    document.getElementById('pTreatmentHelp').textContent = treatments.length
+      ? 'Selected treatment will receive all medicines added below.'
+      : 'No treatment records exist for this doctor. Complete an appointment and save a treatment first.';
+    prescriptionMedicines = medicines;
+    const rows = document.getElementById('prescriptionRows');
+    rows.innerHTML = '';
+    addMedicineRow();
+    await loadDoctorPrescriptions();
+    const tb=document.getElementById('treatmentsTbody');
+    tb.innerHTML=treatments.length ? treatments.slice(0,10).map(t=>`<tr><td>${escapeHtml(t.patient_name)}</td><td>${escapeHtml(t.diagnosis)}</td><td>${escapeHtml(t.treatment_notes||'—')}</td><td>${escapeHtml(t.treatment_date||'')}</td></tr>`).join('') : '<tr class="empty-row"><td colspan="4">No treatment records yet.</td></tr>';
+  } catch(err){ showBanner(banner,'error',err.message); }
+}
+
+document.getElementById('treatmentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { await apiFetch('/treatments',{method:'POST',body:JSON.stringify({appointment_id:document.getElementById('tAppointment').value,diagnosis:document.getElementById('diagnosis').value.trim(),treatment_notes:document.getElementById('treatmentNotes').value.trim()})}); showBanner(banner,'success','Treatment saved.'); e.target.reset(); await loadClinical(); }
+  catch(err){showBanner(banner,'error',err.message);}
+});
+
+let prescriptionMedicines = [];
+
+function medicineOptions(selected = '') {
+  return '<option value="">Select medicine...</option>' + prescriptionMedicines.map(m =>
+    `<option value="${m.medicine_id}" ${String(m.medicine_id) === String(selected) ? 'selected' : ''}>${escapeHtml(m.name)} — ${formatMoney(m.unit_price)}</option>`
+  ).join('');
+}
+
+function addMedicineRow() {
+  const container = document.getElementById('prescriptionRows');
+  const row = document.createElement('div');
+  row.className = 'form-grid prescription-row';
+  row.style.cssText = 'margin-bottom:10px; padding:12px; border:1px solid var(--border,rgba(127,127,127,.25)); border-radius:10px;';
+  row.innerHTML = `
+    <div class="field"><label>Medicine</label><select class="p-medicine" required>${medicineOptions()}</select></div>
+    <div class="field"><label>Dosage</label><input class="p-dosage" placeholder="1 tablet twice daily"></div>
+    <div class="field"><label>Duration (days)</label><input class="p-duration" type="number" min="1" placeholder="30"></div>
+    <div class="field"><label>Quantity</label><input class="p-quantity" type="number" min="1" required placeholder="60"></div>
+    <div class="field" style="display:flex;align-items:end;"><button type="button" class="btn remove-medicine" style="width:100%;">Remove</button></div>`;
+  row.querySelector('.remove-medicine').addEventListener('click', () => {
+    const rows = document.querySelectorAll('.prescription-row');
+    if (rows.length === 1) {
+      showBanner(banner, 'error', 'A prescription needs at least one medicine.');
+      return;
+    }
+    row.remove();
+  });
+  container.appendChild(row);
+}
+
+document.getElementById('addMedicineRow').addEventListener('click', addMedicineRow);
+
+document.getElementById('prescriptionForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const treatmentId = document.getElementById('pTreatment').value;
+  if (!treatmentId) {
+    showBanner(banner, 'error', 'Select a treatment before adding medicines.');
+    return;
+  }
+  const medicines = [...document.querySelectorAll('.prescription-row')].map(row => ({
+    medicine_id: row.querySelector('.p-medicine').value,
+    dosage: row.querySelector('.p-dosage').value.trim(),
+    duration_days: row.querySelector('.p-duration').value || null,
+    quantity: row.querySelector('.p-quantity').value
+  }));
+  if (medicines.some(m => !m.medicine_id || Number(m.quantity) < 1)) {
+    showBanner(banner, 'error', 'Choose a medicine and positive quantity for every row.');
+    return;
+  }
+  const ids = medicines.map(m => String(m.medicine_id));
+  if (new Set(ids).size !== ids.length) {
+    showBanner(banner, 'error', 'Each medicine can only appear once. Increase its quantity instead.');
+    return;
+  }
+  try {
+    const result = await apiFetch('/prescriptions', {
+      method: 'POST',
+      body: JSON.stringify({ treatment_id: treatmentId, medicines })
+    });
+    showBanner(banner, 'success', result.message || 'Prescription saved and stock updated.');
+    document.getElementById('prescriptionRows').innerHTML = '';
+    addMedicineRow();
+    await loadDoctorPrescriptions();
+    await loadClinical();
+  } catch(err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+async function loadDoctorPrescriptions() {
+  const tbody = document.getElementById('prescriptionsTbody');
+  try {
+    const list = await apiFetch('/prescriptions');
+    tbody.innerHTML = list.length ? list.slice(0, 20).map(pr => `<tr>
+      <td>${escapeHtml(pr.patient_name || '—')}</td>
+      <td>${escapeHtml(pr.medicine_name || '—')}</td>
+      <td>${escapeHtml(pr.dosage || '—')}</td>
+      <td>${pr.duration_days ? escapeHtml(String(pr.duration_days)) + ' days' : '—'}</td>
+      <td>${escapeHtml(String(pr.quantity))}</td>
+    </tr>`).join('') : '<tr class="empty-row"><td colspan="5">No prescriptions yet.</td></tr>';
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Could not load prescriptions.</td></tr>';
+  }
+}
+
+async function loadPatients() {
+  const tbody = document.getElementById('patientsTbody');
+  try {
+    allPatients = await apiFetch('/patients');
+    renderPatients(allPatients);
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Could not load patients.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderPatients(list) {
+  const tbody = document.getElementById('patientsTbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No patients found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.dob)}</td>
+      <td>${escapeHtml(p.gender)}</td>
+      <td>${escapeHtml(p.phone || '—')}</td>
+      <td>${escapeHtml(p.blood_group || '—')}</td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('patientSearch').addEventListener('input', (e) => {
+  const term = e.target.value.trim().toLowerCase();
+  if (!term) { renderPatients(allPatients); return; }
+  renderPatients(allPatients.filter(p =>
+    p.name.toLowerCase().includes(term) || (p.phone || '').includes(term)
+  ));
+});
+</script>
+</body>
+</html>

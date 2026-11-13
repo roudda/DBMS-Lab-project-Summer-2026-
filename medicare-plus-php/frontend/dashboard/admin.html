@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:14px;">+</span></div>
+    <div class="sidebar-role">Admin Dashboard</div>
+    <nav class="nav-list">
+      <a class="nav-item active" href="#overview">Overview</a>
+      <a class="nav-item" href="#tier2">Tier-2 Operations</a>
+      <a class="nav-item" href="#patients">Patients</a>
+      <a class="nav-item" href="#appointments">Appointments</a>
+      <a class="nav-item" href="#inventory">Inventory</a>
+      <a class="nav-item" href="#billing">Billing</a>
+      <a class="nav-item" href="#reports">Reports</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong data-user-name>—</strong><span data-user-role>—</span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1>Admin overview</h1>
+          <p>Full visibility across patients, appointments, inventory, and billing.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <section id="overview">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statPatients">—</div><div class="label">Total patients</div></div>
+        <div class="stat-card"><div class="num" id="statAppts">—</div><div class="label">Appointments (all-time)</div></div>
+        <div class="stat-card accent"><div class="num" id="statLowStock">—</div><div class="label">Low-stock medicines</div></div>
+        <div class="stat-card accent"><div class="num" id="statUnpaid">—</div><div class="label">Unpaid / partial bills</div></div>
+        <div class="stat-card"><div class="num" id="statDoctors">—</div><div class="label">Doctors</div></div>
+        <div class="stat-card"><div class="num" id="statToday">—</div><div class="label">Today's appointments</div></div>
+        <div class="stat-card accent"><div class="num" id="statRooms">—</div><div class="label">Occupied rooms</div></div>
+        <div class="stat-card accent"><div class="num" id="statExpiry">—</div><div class="label">Expiring within 30 days</div></div>
+      </div>
+    </section>
+
+    <section id="patients" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Patients</h3>
+          <div class="sub">Register, search, and manage patient records.</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <input type="search" class="search-bar" id="patientSearch" placeholder="Search by name or phone...">
+          <button class="btn btn-primary" id="togglePatientForm">+ Register patient</button>
+        </div>
+      </div>
+
+      <div class="collapsible" id="patientFormWrap">
+        <form id="patientForm">
+          <input type="hidden" id="patientId">
+          <div class="form-grid">
+            <div class="field"><label>Full name</label><input type="text" id="pName" required></div>
+            <div class="field"><label>Date of birth</label><input type="date" id="pDob" required></div>
+            <div class="field"><label>Gender</label>
+              <select id="pGender" required>
+                <option value="">Select...</option>
+                <option>Male</option><option>Female</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Phone</label><input type="text" id="pPhone"></div>
+            <div class="field"><label>Email</label><input type="email" id="pEmail"></div>
+            <div class="field"><label>Blood group</label><input type="text" id="pBlood" placeholder="e.g. O+"></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="patientFormSubmit">Save patient</button>
+            <button type="button" class="btn" onclick="resetPatientForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>DOB</th><th>Gender</th><th>Phone</th><th>Blood</th><th>Registered</th><th></th></tr></thead>
+          <tbody id="patientsTbody"><tr class="empty-row"><td colspan="7">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="appointments" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Appointments</h3>
+          <div class="sub">Book new appointments and update visit status.</div>
+        </div>
+        <button class="btn btn-primary" id="toggleApptForm">+ Book appointment</button>
+      </div>
+
+      <div class="collapsible" id="apptFormWrap">
+        <form id="apptForm">
+          <div class="form-grid">
+            <div class="field"><label>Patient</label><select id="aPatient" required><option value="">Loading...</option></select></div>
+            <div class="field"><label>Doctor</label><select id="aDoctor" required><option value="">Loading...</option></select></div>
+            <div class="field"><label>Date</label><input type="date" id="aDate" required></div>
+            <div class="field"><label>Time</label><input type="time" id="aTime" required></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Book appointment</button>
+            <button type="button" class="btn" onclick="closeApptForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th><th>Update</th></tr></thead>
+          <tbody id="apptsTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="inventory" class="panel">
+      <div class="panel-head">
+        <div><h3>Medicine inventory</h3><div class="sub">Rows below reorder level are flagged.</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Medicine</th><th>Category</th><th>In stock</th><th>Reorder level</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody id="inventoryTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="reports" class="panel">
+      <div class="panel-head"><div><h3>Operational report</h3><div class="sub">Live KPIs from appointments, pharmacy, rooms and payments.</div></div></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="reportRevenue">—</div><div class="label">Collected revenue</div></div>
+        <div class="stat-card"><div class="num" id="reportLow">—</div><div class="label">Low-stock items</div></div>
+        <div class="stat-card"><div class="num" id="reportBills">—</div><div class="label">Outstanding bills</div></div>
+        <div class="stat-card"><div class="num" id="reportRooms">—</div><div class="label">Occupied rooms</div></div>
+      </div>
+    </section>
+
+    <section id="billing" class="panel">
+      <div class="panel-head">
+        <div><h3>Billing</h3><div class="sub">All bills across patients.</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bill #</th><th>Patient</th><th>Total</th><th>Paid</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="billsTbody"><tr class="empty-row"><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../config.js"></script>
+<script src="shared.js"></script>
+<script src="tier2.js"></script>
+<script>
+const session = requireSession('Admin');
+const banner = document.getElementById('banner');
+
+if (session) {
+  renderUserChrome(session);
+  loadOverview();
+  loadPatients();
+  loadDoctorsIntoSelect();
+  loadAppointments();
+  loadInventory();
+  loadBills();
+}
+
+// ---------- nav active state ----------
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+
+// ---------- overview ----------
+async function loadOverview() {
+  try {
+    const [s, appts] = await Promise.all([apiFetch('/dashboard/stats'), apiFetch('/appointments')]);
+    document.getElementById('statPatients').textContent = s.patients;
+    document.getElementById('statAppts').textContent = appts.length;
+    document.getElementById('statLowStock').textContent = s.low_stock;
+    document.getElementById('statUnpaid').textContent = s.unpaid_bills;
+    document.getElementById('statDoctors').textContent = s.doctors;
+    document.getElementById('statToday').textContent = s.appointments_today;
+    document.getElementById('statRooms').textContent = s.occupied_rooms;
+    document.getElementById('statExpiry').textContent = s.expiring_soon;
+    document.getElementById('reportRevenue').textContent = formatMoney(s.revenue);
+    document.getElementById('reportLow').textContent = s.low_stock;
+    document.getElementById('reportBills').textContent = s.unpaid_bills;
+    document.getElementById('reportRooms').textContent = s.occupied_rooms;
+  } catch (err) { showBanner(banner, 'error', err.message); }
+}
+
+// ---------- patients ----------
+const patientFormWrap = document.getElementById('patientFormWrap');
+document.getElementById('togglePatientForm').addEventListener('click', () => {
+  patientFormWrap.classList.toggle('open');
+});
+
+function resetPatientForm() {
+  document.getElementById('patientForm').reset();
+  document.getElementById('patientId').value = '';
+  document.getElementById('patientFormSubmit').textContent = 'Save patient';
+  patientFormWrap.classList.remove('open');
+}
+
+document.getElementById('patientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('patientId').value;
+  const payload = {
+    name: document.getElementById('pName').value.trim(),
+    dob: document.getElementById('pDob').value,
+    gender: document.getElementById('pGender').value,
+    phone: document.getElementById('pPhone').value.trim(),
+    email: document.getElementById('pEmail').value.trim(),
+    blood_group: document.getElementById('pBlood').value.trim(),
+  };
+  try {
+    if (id) {
+      await apiFetch('/patients/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+      showBanner(banner, 'success', 'Patient updated.');
+    } else {
+      await apiFetch('/patients', { method: 'POST', body: JSON.stringify(payload) });
+      showBanner(banner, 'success', 'Patient registered.');
+    }
+    resetPatientForm();
+    loadPatients();
+    loadOverview();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+let allPatients = [];
+
+async function loadPatients() {
+  const tbody = document.getElementById('patientsTbody');
+  try {
+    allPatients = await apiFetch('/patients');
+    renderPatients(allPatients);
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load patients.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderPatients(list) {
+  const tbody = document.getElementById('patientsTbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No patients yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.dob)}</td>
+      <td>${escapeHtml(p.gender)}</td>
+      <td>${escapeHtml(p.phone || '—')}</td>
+      <td>${escapeHtml(p.blood_group || '—')}</td>
+      <td>${escapeHtml(p.registered_on || '—')}</td>
+      <td>
+        <button class="btn btn-sm" onclick="editPatient(${p.patient_id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deletePatient(${p.patient_id})">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('patientSearch').addEventListener('input', (e) => {
+  const term = e.target.value.trim().toLowerCase();
+  if (!term) { renderPatients(allPatients); return; }
+  renderPatients(allPatients.filter(p =>
+    p.name.toLowerCase().includes(term) || (p.phone || '').includes(term)
+  ));
+});
+
+function editPatient(id) {
+  const p = allPatients.find(x => x.patient_id === id);
+  if (!p) return;
+  document.getElementById('patientId').value = p.patient_id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pDob').value = p.dob;
+  document.getElementById('pGender').value = p.gender;
+  document.getElementById('pPhone').value = p.phone || '';
+  document.getElementById('pEmail').value = p.email || '';
+  document.getElementById('pBlood').value = p.blood_group || '';
+  document.getElementById('patientFormSubmit').textContent = 'Update patient';
+  patientFormWrap.classList.add('open');
+  document.getElementById('patients').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function deletePatient(id) {
+  if (!confirm('Delete this patient? This cannot be undone.')) return;
+  try {
+    await apiFetch('/patients/' + id, { method: 'DELETE' });
+    showBanner(banner, 'success', 'Patient deleted.');
+    loadPatients();
+    loadOverview();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+// ---------- appointments ----------
+const apptFormWrap = document.getElementById('apptFormWrap');
+document.getElementById('toggleApptForm').addEventListener('click', () => {
+  apptFormWrap.classList.toggle('open');
+  loadPatientsIntoSelect();
+});
+function closeApptForm() { apptFormWrap.classList.remove('open'); }
+
+async function loadPatientsIntoSelect() {
+  const sel = document.getElementById('aPatient');
+  try {
+    const patients = allPatients.length ? allPatients : await apiFetch('/patients');
+    sel.innerHTML = '<option value="">Select patient...</option>' +
+      patients.map(p => `<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load patients</option>';
+  }
+}
+
+async function loadDoctorsIntoSelect() {
+  const sel = document.getElementById('aDoctor');
+  try {
+    const doctors = await apiFetch('/doctors');
+    sel.innerHTML = '<option value="">Select doctor...</option>' +
+      doctors.map(d => `<option value="${d.doctor_id}">${escapeHtml(d.name)} — ${escapeHtml(d.specialization || '')}</option>`).join('');
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load doctors</option>';
+  }
+}
+
+document.getElementById('apptForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    patient_id: document.getElementById('aPatient').value,
+    doctor_id: document.getElementById('aDoctor').value,
+    appt_date: document.getElementById('aDate').value,
+    appt_time: document.getElementById('aTime').value,
+  };
+  try {
+    await apiFetch('/appointments', { method: 'POST', body: JSON.stringify(payload) });
+    showBanner(banner, 'success', 'Appointment booked.');
+    document.getElementById('apptForm').reset();
+    closeApptForm();
+    loadAppointments();
+    loadOverview();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+async function loadAppointments() {
+  const tbody = document.getElementById('apptsTbody');
+  try {
+    const appts = await apiFetch('/appointments');
+    if (!appts.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No appointments yet.</td></tr>';
+      return;
+    }
+    const statuses = ['Scheduled', 'Completed', 'Cancelled', 'No-Show'];
+    tbody.innerHTML = appts.map(a => `
+      <tr>
+        <td>${escapeHtml(a.appt_date)}</td>
+        <td>${escapeHtml(a.appt_time)}</td>
+        <td>${escapeHtml(a.patient_name)}</td>
+        <td>${escapeHtml(a.doctor_name)}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td>
+          <select id="statusSel${a.appointment_id}" class="btn-sm" style="display:inline-block;width:auto;padding:5px 6px;">
+            ${statuses.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm" onclick="updateApptStatus(${a.appointment_id})">Apply</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load appointments.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+async function updateApptStatus(id) {
+  const status = document.getElementById('statusSel' + id).value;
+  try {
+    await apiFetch('/appointments/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) });
+    showBanner(banner, 'success', 'Appointment status updated.');
+    loadAppointments();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+// ---------- inventory ----------
+async function loadInventory() {
+  const tbody = document.getElementById('inventoryTbody');
+  try {
+    const items = await apiFetch('/inventory');
+    if (!items.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No inventory records yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(i => {
+      const low = Number(i.quantity_in_stock) <= Number(i.reorder_level);
+      return `
+        <tr>
+          <td>${escapeHtml(i.medicine_name)}</td>
+          <td>${escapeHtml(i.category || '—')}</td>
+          <td>${escapeHtml(i.quantity_in_stock)}</td>
+          <td>${escapeHtml(i.reorder_level)}</td>
+          <td>${escapeHtml(i.expiry_date || '—')}</td>
+          <td>${low ? '<span class="badge badge-danger">Low stock</span>' : '<span class="badge badge-success">OK</span>'}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load inventory.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+// ---------- billing ----------
+async function loadBills() {
+  const tbody = document.getElementById('billsTbody');
+  try {
+    const bills = await apiFetch('/bills');
+    if (!bills.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No bills yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = bills.map(b => `
+      <tr>
+        <td>#${b.bill_id}</td>
+        <td>${escapeHtml(b.patient_name)}</td>
+        <td>${formatMoney(b.total_amount)}</td>
+        <td>${formatMoney(b.amount_paid)}</td>
+        <td>${statusBadge(b.status)}</td>
+        <td>${escapeHtml((b.bill_date || '').split(' ')[0])}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load bills.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare+ | Cashier Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark"><span class="plus">+</span> MediCare<span class="plus" style="font-size:14px;">+</span></div>
+    <div class="sidebar-role">Cashier Dashboard</div>
+    <nav class="nav-list">
+      <a class="nav-item active" href="#overview">Overview</a>
+      <a class="nav-item" href="#tier2">Tier-2 Operations</a>
+      <a class="nav-item" href="#billing">Billing</a>
+      <a class="nav-item" href="#payment">Record Payment</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong data-user-name>—</strong><span data-user-role>—</span></div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1>Billing desk</h1>
+          <p>Create bills and record payments against them.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()"></button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <section id="overview">
+      <div class="stat-grid">
+        <div class="stat-card accent"><div class="num" id="statUnpaid">—</div><div class="label">Unpaid bills</div></div>
+        <div class="stat-card"><div class="num" id="statPartial">—</div><div class="label">Partially paid</div></div>
+        <div class="stat-card"><div class="num" id="statPaid">—</div><div class="label">Fully paid</div></div>
+        <div class="stat-card"><div class="num" id="statCollected">—</div><div class="label">Total collected</div></div>
+      </div>
+    </section>
+
+    <section id="billing" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Bills</h3>
+          <div class="sub">Filter by status, or create a new bill for a visit.</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <select id="statusFilter" style="max-width:170px;">
+            <option value="">All statuses</option>
+            <option>Unpaid</option>
+            <option>Partially Paid</option>
+            <option>Paid</option>
+          </select>
+          <button class="btn btn-primary" id="toggleBillForm">+ New bill</button>
+        </div>
+      </div>
+
+      <div class="collapsible" id="billFormWrap">
+        <form id="billForm">
+          <div class="form-grid">
+            <div class="field"><label>Patient</label><select id="bPatient" required><option value="">Loading...</option></select></div>
+            <div class="field"><label>Appointment ID (optional)</label><input type="number" id="bAppt" min="1" placeholder="e.g. 4"></div>
+            <div class="field"><label>Admission ID (optional)</label><input type="number" id="bAdmission" min="1" placeholder="e.g. 2"></div>
+            <div class="field"><label>Total amount</label><input type="number" id="bAmount" min="0" step="0.01" required></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create bill</button>
+            <button type="button" class="btn" onclick="closeBillForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bill #</th><th>Patient</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="billsTbody"><tr class="empty-row"><td colspan="7">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="payment" class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Record a payment</h3>
+          <div class="sub">Applies to the selected bill and updates its status automatically.</div>
+        </div>
+      </div>
+      <form id="paymentForm">
+        <div class="form-grid">
+          <div class="field"><label>Bill</label><select id="payBill" required><option value="">Loading...</option></select></div>
+          <div class="field"><label>Amount paid</label><input type="number" id="payAmount" min="0.01" step="0.01" required></div>
+          <div class="field"><label>Payment method</label>
+            <select id="payMethod" required>
+              <option value="">Select...</option>
+              <option>Cash</option><option>Card</option><option>UPI</option><option>Insurance</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Record payment</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="../config.js"></script>
+<script src="shared.js"></script>
+<script src="tier2.js"></script>
+<script>
+const session = requireSession('Cashier');
+const banner = document.getElementById('banner');
+let allBills = [];
+
+if (session) {
+  renderUserChrome(session);
+  loadBills();
+  loadPatientsIntoSelect();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+
+// ---------- overview + bills table ----------
+async function loadBills() {
+  const tbody = document.getElementById('billsTbody');
+  try {
+    allBills = await apiFetch('/bills');
+    document.getElementById('statUnpaid').textContent = allBills.filter(b => b.status === 'Unpaid').length;
+    document.getElementById('statPartial').textContent = allBills.filter(b => b.status === 'Partially Paid').length;
+    document.getElementById('statPaid').textContent = allBills.filter(b => b.status === 'Paid').length;
+    const collected = allBills.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0);
+    document.getElementById('statCollected').textContent = formatMoney(collected);
+    renderBills();
+    populatePaySelect();
+  } catch (err) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load bills.</td></tr>';
+    showBanner(banner, 'error', err.message);
+  }
+}
+
+function renderBills() {
+  const tbody = document.getElementById('billsTbody');
+  const filter = document.getElementById('statusFilter').value;
+  const list = filter ? allBills.filter(b => b.status === filter) : allBills;
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No bills found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(b => {
+    const balance = Number(b.total_amount) - Number(b.amount_paid || 0);
+    return `
+      <tr>
+        <td>#${b.bill_id}</td>
+        <td>${escapeHtml(b.patient_name)}</td>
+        <td>${formatMoney(b.total_amount)}</td>
+        <td>${formatMoney(b.amount_paid)}</td>
+        <td>${formatMoney(balance)}</td>
+        <td>${statusBadge(b.status)}</td>
+        <td>${escapeHtml((b.bill_date || '').split(' ')[0])}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.getElementById('statusFilter').addEventListener('change', renderBills);
+
+// ---------- new bill ----------
+const billFormWrap = document.getElementById('billFormWrap');
+document.getElementById('toggleBillForm').addEventListener('click', () => {
+  billFormWrap.classList.toggle('open');
+});
+function closeBillForm() { billFormWrap.classList.remove('open'); }
+
+async function loadPatientsIntoSelect() {
+  const sel = document.getElementById('bPatient');
+  try {
+    const patients = await apiFetch('/patients');
+    sel.innerHTML = '<option value="">Select patient...</option>' +
+      patients.map(p => `<option value="${p.patient_id}">${escapeHtml(p.name)} (#${p.patient_id})</option>`).join('');
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load patients</option>';
+  }
+}
+
+document.getElementById('billForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    patient_id: document.getElementById('bPatient').value,
+    appointment_id: document.getElementById('bAppt').value || null,
+    admission_id: document.getElementById('bAdmission').value || null,
+    total_amount: document.getElementById('bAmount').value,
+  };
+  try {
+    await apiFetch('/bills', { method: 'POST', body: JSON.stringify(payload) });
+    showBanner(banner, 'success', 'Bill created.');
+    document.getElementById('billForm').reset();
+    closeBillForm();
+    loadBills();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+
+// ---------- record payment ----------
+function populatePaySelect() {
+  const sel = document.getElementById('payBill');
+  const unpaidOrPartial = allBills.filter(b => b.status !== 'Paid');
+  if (!unpaidOrPartial.length) {
+    sel.innerHTML = '<option value="">No outstanding bills</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Select bill...</option>' +
+    unpaidOrPartial.map(b => {
+      const balance = Number(b.total_amount) - Number(b.amount_paid || 0);
+      return `<option value="${b.bill_id}">#${b.bill_id} — ${escapeHtml(b.patient_name)} (balance: ${formatMoney(balance)})</option>`;
+    }).join('');
+}
+
+document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const billId = document.getElementById('payBill').value;
+  if (!billId) { showBanner(banner, 'error', 'Choose a bill first.'); return; }
+  const payload = {
+    amount_paid: document.getElementById('payAmount').value,
+    payment_method: document.getElementById('payMethod').value,
+  };
+  try {
+    const result = await apiFetch('/bills/' + billId + '/payments', { method: 'POST', body: JSON.stringify(payload) });
+    showBanner(banner, 'success', 'Payment recorded. Bill is now ' + result.bill_status + '.');
+    document.getElementById('paymentForm').reset();
+    loadBills();
+  } catch (err) {
+    showBanner(banner, 'error', err.message);
+  }
+});
+</script>
+</body>
+</html>
